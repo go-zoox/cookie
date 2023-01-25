@@ -35,6 +35,10 @@ func New(w http.ResponseWriter, r *http.Request, cfg ...*Config) Cookie {
 
 	if len(cfg) > 0 && cfg[0] != nil {
 		cfgX = cfg[0]
+
+		if cfgX.Path == "" {
+			cfgX.Path = DefaultPath
+		}
 	}
 
 	return &cookie{
