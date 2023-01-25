@@ -5,8 +5,17 @@ import (
 	"time"
 )
 
-// Cookie is a middleware for handling cookie.
-type Cookie struct {
+type Cookie interface {
+	// Set sets response cookie with the given name and value.
+	Set(name string, value string, maxAge time.Duration)
+	// Get gets request cookie with the given name.
+	Get(name string) string
+	// Del deletes response cookie with the given name.
+	Del(name string)
+}
+
+// cookie is a middleware for handling cookie.
+type cookie struct {
 	Request        *http.Request
 	ResponseWriter http.ResponseWriter
 	Cfg            *Config
@@ -21,14 +30,14 @@ type Config struct {
 }
 
 // New creates a cookie getter and setter.
-func New(w http.ResponseWriter, r *http.Request, cfg ...*Config) *Cookie {
+func New(w http.ResponseWriter, r *http.Request, cfg ...*Config) Cookie {
 	cfgX := DefaultCfg
 
 	if len(cfg) > 0 && cfg[0] != nil {
 		cfgX = cfg[0]
 	}
 
-	return &Cookie{
+	return &cookie{
 		Request:        r,
 		ResponseWriter: w,
 		Cfg:            cfgX,
@@ -36,7 +45,7 @@ func New(w http.ResponseWriter, r *http.Request, cfg ...*Config) *Cookie {
 }
 
 // Set sets response cookie with the given name and value.
-func (c *Cookie) Set(name string, value string, maxAge time.Duration) {
+func (c *cookie) Set(name string, value string, maxAge time.Duration) {
 	cookie := &http.Cookie{
 		Name:     name,
 		Value:    value,
@@ -51,7 +60,7 @@ func (c *Cookie) Set(name string, value string, maxAge time.Duration) {
 }
 
 // Get gets request cookie with the given name.
-func (c *Cookie) Get(name string) string {
+func (c *cookie) Get(name string) string {
 	cookie, err := c.Request.Cookie(name)
 	if err != nil {
 		return ""
@@ -61,6 +70,6 @@ func (c *Cookie) Get(name string) string {
 }
 
 // Del deletes response cookie with the given name.
-func (c *Cookie) Del(name string) {
+func (c *cookie) Del(name string) {
 	c.Set(name, "", -1)
 }
