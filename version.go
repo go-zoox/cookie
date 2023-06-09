@@ -1,4 +1,4 @@
 package cookie
 
 // Version is the version of this package
-var Version = "1.0.3"
+var Version = "1.2.0"
