@@ -7,7 +7,7 @@ import (
 
 type Cookie interface {
 	// Set sets response cookie with the given name and value.
-	Set(name string, value string, maxAge time.Duration)
+	Set(name string, value string, cfg ...*Config)
 	// Get gets request cookie with the given name.
 	Get(name string) string
 	// Del deletes response cookie with the given name.
@@ -18,11 +18,11 @@ type Cookie interface {
 type cookie struct {
 	Request        *http.Request
 	ResponseWriter http.ResponseWriter
-	Cfg            *Config
 }
 
 // Config is the optional cookie config.
 type Config struct {
+	MaxAge   time.Duration
 	Path     string
 	Domain   string
 	Secure   bool
@@ -31,9 +31,16 @@ type Config struct {
 }
 
 // New creates a cookie getter and setter.
-func New(w http.ResponseWriter, r *http.Request, cfg ...*Config) Cookie {
-	cfgX := DefaultCfg
+func New(w http.ResponseWriter, r *http.Request) Cookie {
+	return &cookie{
+		Request:        r,
+		ResponseWriter: w,
+	}
+}
 
+// Set sets response cookie with the given name and value.
+func (c *cookie) Set(name string, value string, cfg ...*Config) {
+	cfgX := DefaultCfg
 	if len(cfg) > 0 && cfg[0] != nil {
 		cfgX = cfg[0]
 
@@ -42,24 +49,15 @@ func New(w http.ResponseWriter, r *http.Request, cfg ...*Config) Cookie {
 		}
 	}
 
-	return &cookie{
-		Request:        r,
-		ResponseWriter: w,
-		Cfg:            cfgX,
-	}
-}
-
-// Set sets response cookie with the given name and value.
-func (c *cookie) Set(name string, value string, maxAge time.Duration) {
 	cookie := &http.Cookie{
 		Name:     name,
 		Value:    value,
-		Expires:  time.Now().Add(maxAge),
-		Path:     c.Cfg.Path,
-		Domain:   c.Cfg.Domain,
-		HttpOnly: c.Cfg.HTTPOnly,
-		Secure:   c.Cfg.Secure,
-		SameSite: c.Cfg.SameSite,
+		Expires:  time.Now().Add(cfgX.MaxAge),
+		Path:     cfgX.Path,
+		Domain:   cfgX.Domain,
+		HttpOnly: cfgX.HTTPOnly,
+		Secure:   cfgX.Secure,
+		SameSite: cfgX.SameSite,
 	}
 
 	http.SetCookie(c.ResponseWriter, cookie)
@@ -77,5 +75,5 @@ func (c *cookie) Get(name string) string {
 
 // Del deletes response cookie with the given name.
 func (c *cookie) Del(name string) {
-	c.Set(name, "", -1)
+	c.Set(name, "", &Config{MaxAge: -1})
 }
