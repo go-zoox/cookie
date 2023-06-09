@@ -27,6 +27,7 @@ type Config struct {
 	Domain   string
 	Secure   bool
 	HTTPOnly bool
+	SameSite http.SameSite
 }
 
 // New creates a cookie getter and setter.
@@ -58,6 +59,7 @@ func (c *cookie) Set(name string, value string, maxAge time.Duration) {
 		Domain:   c.Cfg.Domain,
 		HttpOnly: c.Cfg.HTTPOnly,
 		Secure:   c.Cfg.Secure,
+		SameSite: c.Cfg.SameSite,
 	}
 
 	http.SetCookie(c.ResponseWriter, cookie)
